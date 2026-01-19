@@ -60,9 +60,11 @@ models:
       +materialized: view
       +tags: ['intermediate']
 
+
     marts:
       +materialized: table
       +tags: ['marts']
+
 
       +post-hook:
         - >
