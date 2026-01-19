@@ -1,0 +1,74 @@
+
+# Name your project! Project names should contain only lowercase characters
+# and underscores. A good package name should reflect your organization's
+# name or the intended use of these models
+name: 'ae_stanley_tasks'
+version: '1.0.0'
+
+# This setting configures which "profile" dbt uses for this project.
+profile: 'ae_stanley_tasks'
+
+# These configurations specify where dbt should look for different types of files.
+# The `model-paths` config, for example, states that models in this project can be
+# found in the "models/" directory. You probably won't need to change these!
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:         # directories to be removed by `dbt clean`
+  - "target"
+  - "dbt_packages"
+
+
+# ------------------------------------------------------------------------------
+# HARD SAFETY: Only allow valid environments
+# ------------------------------------------------------------------------------
+on-run-start:
+  - >
+    {% if target.name not in ['dev', 'staging', 'prod'] %}
+      {{ exceptions.raise_compiler_error(
+          "Invalid target: " ~ target.name ~ ". Must be one of: dev, staging, prod."
+      ) }}
+    {% endif %}
+
+
+# Configuring models
+# Full documentation: https://docs.getdbt.com/docs/configuring-models
+
+# In this example config, we tell dbt to build all models in the example/
+# directory as views. These settings can be overridden in the individual model
+# files using the `{{ config(...) }}` macro.
+models:
+
+  +pre-hook: "{{ assert_not_prod() }}"
+
+  #+post-hook:
+    #- "select '{{ this }}' as model, count(*) as row_count from {{ this }}"
+
+  ae_stanley_tasks:
+    +on_schema_change: fail   # <-- applies to ALL models in the project
+
+    # Config indicated by + and applies to all files under models/example/
+    staging:
+      +materialized: view
+      +tags: ['staging', 'base']
+
+    intermediate:
+      +materialized: view
+      +tags: ['intermediate']
+
+    marts:
+      +materialized: table
+      +tags: ['marts']
+
+      +post-hook:
+        - >
+          {% if target.name != 'prod' %}
+          alter table {{ this }}
+          set options (
+            labels=[('owner','analytics'),('env','{{ target.name }}')]
+          )
+          {% endif %}

@@ -1,0 +1,82 @@
+name: Publish dbt docs and artifacts to GCS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  publish-docs:
+    runs-on: ubuntu-latest
+
+    env:
+      DBT_PROFILES_DIR: ~/.dbt
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dbt
+        run: |
+          pip install dbt-core dbt-bigquery
+
+      - name: Cache dbt packages
+        uses: actions/cache@v4
+        with:
+          path: dbt_packages
+          key: dbt-packages-${{ hashFiles('packages.yml') }}
+
+      - name: Install dbt packages
+        run: dbt deps
+
+      # Secure auth (no manual key writing needed)
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Setup gcloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Write dbt profiles.yml
+        run: |
+          mkdir -p ~/.dbt
+          cat << 'EOF' > ~/.dbt/profiles.yml
+          ae_stanley_igwe_monzo:
+            target: prod
+            outputs:
+              prod:
+                type: bigquery
+                method: service-account
+                project: analytics-take-home-test
+                dataset: AE_Stan_Igwe_Task
+                keyfile: $GOOGLE_APPLICATION_CREDENTIALS
+                location: US
+                threads: 4
+          EOF
+
+      - name: Run dbt + generate docs
+        run: |
+          dbt build --target prod
+          dbt docs generate --target prod
+
+      - name: Upload dbt docs site to GCS
+        run: |
+          gsutil -m rsync -r target/ gs://${{ secrets.GCS_BUCKET }}/docs/
+
+      - name: Upload versioned artifacts (for change tracking)
+        run: |
+          BRANCH="${GITHUB_REF_NAME}"
+          SHA="${GITHUB_SHA}"
+
+          gsutil -m cp \
+            target/manifest.json \
+            target/catalog.json \
+            target/run_results.json \
+            gs://${{ secrets.GCS_BUCKET }}/artifacts/$BRANCH/$SHA/
