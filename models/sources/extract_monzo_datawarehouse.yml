@@ -15,7 +15,7 @@ sources:
       data_contract: none (append-only event logs)
 
     config:
-      project: analytics-take-home-test
+      project: dbt-docs-484713
       dataset: monzo_datawarehouse
 
     tables:
@@ -25,7 +25,7 @@ sources:
           One row per account representing the moment the account
           was first created.
 
-        loaded_at_field: created_ts
+        loaded_at_field: created_at
 
         freshness:
           warn_after:
@@ -33,16 +33,16 @@ sources:
             period: day
 
         columns:
-          - name: account_id_hashed
+          - name: account_id
             description: Hashed identifier for the account.
 
-          - name: user_id_hashed
+          - name: user_id
             description: Hashed identifier for the user who owns the account.
 
           - name: account_type
             description: Type of account created (e.g. personal, joint).
 
-          - name: created_ts
+          - name: created_at
             description: Timestamp when the account was created.
 
 
@@ -52,7 +52,7 @@ sources:
           Append-only log of account closure actions.
           Accounts may appear multiple times if reopened and closed again.
 
-        loaded_at_field: closed_ts
+        loaded_at_field: closed_at
 
         freshness:
           warn_after:
@@ -60,10 +60,10 @@ sources:
             period: day
 
         columns:
-          - name: account_id_hashed
+          - name: account_id
             description: Hashed identifier for the account.
 
-          - name: closed_ts
+          - name: closed_at
             description: Timestamp when the account was closed.
 
 
@@ -73,7 +73,7 @@ sources:
           Append-only log indicating when previously closed
           accounts were reopened.
 
-        loaded_at_field: reopened_ts
+        loaded_at_field: reopened_at
 
         freshness:
           warn_after:
@@ -81,10 +81,10 @@ sources:
             period: day
 
         columns:
-          - name: account_id_hashed
+          - name: account_id
             description: Hashed identifier for the account.
 
-          - name: reopened_ts
+          - name: reopened_at
             description: Timestamp when the account was reopened.
 
 
@@ -94,7 +94,7 @@ sources:
           Each row represents the total number of transactions
           performed by an account on a given calendar date.
 
-        loaded_at_field: Date
+        loaded_at_field: activity_date
 
         freshness:
           warn_after:
@@ -102,10 +102,10 @@ sources:
             period: day
 
         columns:
-          - name: account_id_hashed
+          - name: account_id
             description: Hashed identifier for the account.
 
-          - name: Date
+          - name: activity_date
             description: Calendar date of transaction activity.
 
           - name: transactions_num

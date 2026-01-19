@@ -1,7 +1,6 @@
 select
-  account_id_hashed as account_id,
-  user_id_hashed as user_id,
+  account_id as account_id,
+  user_id as user_id,
   account_type,
-  created_ts as created_at
+  created_at as created_at
 from {{ source('monzo_datawarehouse', 'account_created') }}
---{{ dev_limit('created_ts', 60) }}

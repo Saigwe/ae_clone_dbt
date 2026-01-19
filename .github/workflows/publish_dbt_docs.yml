@@ -52,8 +52,8 @@ jobs:
               prod:
                 type: bigquery
                 method: service-account
-                project: analytics-take-home-test
-                dataset: AE_monzo_datawarehouse_SI_prod
+                project: dbt-docs-484713
+                dataset: monzo_datawarehouse_SI_prod
                 keyfile: $GOOGLE_APPLICATION_CREDENTIALS
                 location: US
                 threads: 4
